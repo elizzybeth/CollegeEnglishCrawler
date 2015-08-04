@@ -1,0 +1,139 @@
+var Crawler = require("crawler").Crawler; // include Crawler
+
+var MongoClient = require('mongodb').MongoClient; // include Mongo
+                     
+var setupCrawler = function(collection){
+    var c = new Crawler({
+        "maxConnections":2,
+        
+        // Populate this with UofL cookie
+        headers: {
+            'Cookie': 'optimizelyEndUserId=oeu1397855711890r0.06903332588262856; is_returning=1; oup-cookie=1_29-10-2014; wt3_eid=%3B935649882378213%7C2143446019600667503; _ga=GA1.2.1627630122.1392921203; AMCV_4D6368F454EC41940A4C98A6%40AdobeOrg=1256414278%7CMCMID%7C29197735351980510733684863018516445160%7CMCAAMLH-1436400486%7C7%7CMCAAMB-1436400486%7CNRX38WO0n5BH8Th-nqAG_A%7CMCAID%7CNONE; optimizelySegments=%7B%22204658328%22%3A%22false%22%2C%22204728159%22%3A%22none%22%2C%22204736122%22%3A%22referral%22%2C%22204775011%22%3A%22gc%22%2C%22700471485%22%3A%22true%22%7D; optimizelyBuckets=%7B%7D; s_lv=1435795835454; __utma=90476039.1627630122.1392921203.1435878556.1437956432.3; __utmz=90476039.1434375083.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); AMCV_774C31DD5342CAF40A490D44%40AdobeOrg=1256414278%7CMCMID%7C29186752574512628033686031665310678970%7CMCAAMLH-1438783857%7C7%7CMCAAMB-1438783857%7CNRX38WO0n5BH8Th-nqAG_A%7CMCAID%7C2A804F518507AECF-6000010A20036FBD; mbox=PC#1438178959041-184916.28_59#1439782011|check#true#1438572471|session#1438572387051-280632#1438574271; s_cc=true; s_fid=2E6A19D1E95E1B6A-055D4F9EFBCAC671; s_sq=%5B%5BB%5D%5D; PQIL=1246; AWSELB=8F41BF69186E7A7E737F7DCEB711ECC28A2C51FB40DFA71E752810FB4E3AD1719ACE39F600987B5BA14F169806D8B425FBF56C6575CC49E16DA9B5138539564BB919C1D93F; ezproxy=bqFcLY433xAuMM1; JSESSIONID=AEC004E23478C202E76551D5DDC101E7; UID="UNIVERSITY OF LOUISVILLE-KY"'
+        },
+        
+        // Called for each crawled page 
+        "callback":function(error,result,$) {
+            if(error) {
+                console.log("Error getting page.");
+                console.dir(error);
+                return;    
+            }
+            
+            var beginningOfURL = "http://literature.proquest.com.echo.louisville.edu";
+              
+            $(".alphalinks > a").each(function() {
+                var currentTOC = $(this).attr("href");
+                console.log("Current TOC: ", currentTOC);
+                c.queue(beginningOfURL + currentTOC);
+                  
+                // Check if it's on a TOC page
+                var rx = /^http:\/\/literature.proquest.com.echo.louisville.edu\/contents/;
+            
+                if(rx.test(result.request.uri.href)) {
+                    // on the index page
+                    console.log("On the index: " + result.request.uri.href);
+                        
+                    // find each article link on the index page
+                    $("a[href*='searchFullText']").each(function(index,a) {
+                        console.log("Checking " + a.href);
+                        collection.findOne({URL: a.href}, function(err, article){
+                            if(err){
+                                console.log("Article exist check failed.");
+                                console.log(err);
+                            } else if(article === null){
+                                // not in the database already
+                                // so let's queue it
+                                c.queue(beginningOfURL + a.href);
+                            } else {
+                                console.log("Skipping an article that's already in the database: " + a.href);
+                            }
+                        });
+                    });
+         
+                /*
+                var numberOfTOCs = $(".alphalinks").size();
+                console.log("Number of TOCs: ", numberOfTOCs);             
+                for (i = 1; i < numberOfTOCs; i++) {
+                    c.queue($("ul li a.href:eq(i)"));
+                    console.log("Queueing TOC at index ", i);
+                    var queuedTOC = ($("ul li a.href:eq(i)"));
+                    console.log("Queued TOC: ", queuedTOC);
+                    return;
+                } */                            
+                
+                } else {
+                    console.log("Loaded article: " + result.request.uri.href);
+                }
+            
+                // Need to exclude TOC, From the Editor, Reviews from the analysis; will collect them for now
+                
+                // Will populate author and title in fixdata:
+                    //  use indexOf to get the index of the first colon; 
+                    //  save in a variable; 
+                    //  split the author/title string; 
+                    /// don't forget to trim 
+                    
+                //  Categories to add: author, title, pubDate, citations
+                
+                var articleData = {
+                    HTML: $('html').prop('outerHTML'),
+                    URL: result.request.uri.href,
+                    retDate: new Date,
+                    paragraphs: []
+                };
+                
+                // Get all of the paragraphs, excluding author/title line
+                $("p").not(".noprint").each(function(index, p) {
+                    articleData.paragraphs.push($(p).text().trim());
+                });
+                
+                // Join array elements into a string. 
+                articleData.fullText = articleData.paragraphs.join(" ");
+                
+                // Turn all new lines into spaces (with replace function). 
+                articleData.fullText = articleData.fullText.replace(/[\r\n]/," ");
+                
+                // Turn all double spaces into single spaces (replace).
+                articleData.fullText = articleData.fullText.replace(/\s\s+/," ");
+                
+                // Trim off the final space at end.
+                articleData.fullText = articleData.fullText.trim(); 
+                
+                // Count words with string.split.
+                articleData.wordCount = articleData.fullText.split(" ").length;
+                
+                if(articleData.fullText !== ""){
+                    collection.insert(articleData, {w: 1}, function(err, result) {
+                        if(err) {
+                            console.log("Couldn't save article data.");
+                            console.dir(err);
+                            process.kill();
+                        }        
+                    });
+                } else {
+                    console.log("Empty text array on " + articleData.URL + " so not saving it"); // this appears not to be working
+                };
+            });
+        } 
+    });
+    c.queue("http://literature.proquest.com.echo.louisville.edu/contents/abl_toc/CollegeEnglish/20150501.jsp");
+};
+    
+
+MongoClient.connect("mongodb://localhost:27017/collegeenglish", function(err, db) {
+    if(err) {
+        console.log("Couldn't connect.");
+        console.dir(err);
+        process.kill();
+    }
+    db.createCollection('articles', function(err, collection) {
+        if(err) {
+            console.log("Couldn't create articles collection.");
+            console.dir(err);
+            process.kill();
+        }
+        setupCrawler(collection);
+           
+    });
+}); 
+                                      
