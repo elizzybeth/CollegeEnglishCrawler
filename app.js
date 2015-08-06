@@ -55,7 +55,9 @@ var setupCrawler = function(collection){
                     $(".unstyled .alphalinks > a").each(function() {
                         var currentTOC = $(this).attr("href");
                         console.log("Current TOC: ", currentTOC);
-                        c.queue(beginningOfURL + currentTOC);
+                        if (currentTOC != "/showPage.do?TEMPLATE=/contents/abl_toc/CollegeEnglish/issues.jsp"){
+                            c.queue(beginningOfURL + currentTOC);
+                        };
                     });
                 }
             } else {
