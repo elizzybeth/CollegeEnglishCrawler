@@ -61,7 +61,7 @@ var setupCrawler = function(collection){
                     });
                 }
             } else {
-                console.log("Reached the else! Saving article data. URL:" + result.request.uri.href);
+                console.log("Reached the else! Saving article data. URL:" + result.request.uri.href     );
                 // it's an article
                 // so save the article data
                 
