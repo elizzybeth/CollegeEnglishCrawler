@@ -26,13 +26,43 @@ var fixData = function(articles) {
                 /Anon: Announcements and Calls/i,
                 /Review: /i
             ];
-            
+
+    // Getting article metadata            
             var $ = cheerio.load(article.HTML);
             
             var metadata = "";
+            var authors = null;
             $("p.noprint").each(function(index, p){
-                metadata += " " + $(p).text().trim();
+                metadata += " " + $("p.noprint").text().trim();
+                // Set authors
+                if(authors === null){                                        
+                    //children("strong").first());
+                    
+                    var authorLineParts = $("p.noprint strong").html().split(": ");
+                                   
+                    console.log(authorLineParts);
+                    article.authorString = authorLineParts.shift();
+                    article.authors = article.authorString.split("; ");
+                    article.title = authorLineParts.join(": ");
+                    article.pubDataParts = $("p.noprint a").text().trim();
+                    article.volumeIssue = $("p.noprint a").text().trim().match(/\(\d\d:\d\)/);
+                    article.pubDate = $("p.noprint a").text().trim().match(/\[\w*\s\d\d\d\d\]/);
+                
+                // Making changes to full text
+                    // separate Works Cited
+                    article.worksCited = $(".References_content p").text();
+                    article.numOfCitedWorks = $(".References_content p").length();    
+                
+                 
+                }
             });
+    
+            console.log("article.authorString = " + article.authorString);
+            console.log("article.authors = " + article.authors);
+            console.log("article.title = " + article.title);
+            console.log("article.pubDataParts = " + article.pubDataParts);
+            console.log("article.volumeIssue = " + article.volumeIssue);
+            console.log("article.pubDate = " + article.pubDate);
             
             shouldRemove = badPhrases.some(function(phrase) {
                 return phrase.test(metadata); 
@@ -56,11 +86,17 @@ var fixData = function(articles) {
                 article.disabled = false;
             }
  
+ // Making changes to the full text
+    // Separate articleText
+        // Make articleData.wordCount = articleText wordcount
+    // Separate abstract
+    // Separate works cited
  
+    
  
  
                 
-            articles.update({_id: article._id}, article, {w: 1}, function(err, article) {
+            articles.update({_id: article._id}, article, {w: 1, upsert: true}, function(err, article) {
                 if(err){
                     console.log("Couldn't trim: ", article.URL);
                     console.dir(err);
