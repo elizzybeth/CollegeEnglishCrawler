@@ -3,6 +3,8 @@
   <head>
     <title>Citation Categorizer</title>
     <style>
+      #articleListHolder { width: 15%; position: absolute; top: 0; bottom: 0; overflow: auto; }
+      #articleDataHolder { width: 80%; position: absolute; top: 0; bottom: 0; right: 0; overflow: auto; }
 /*      * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font: 13px Helvetica, Arial; }
       form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
@@ -17,6 +19,8 @@
   <body>
     <div id="articleListHolder">
     </div>
+    <div id="articleDataHolder">
+    </div>
 <!--
     <ul id="messages"></ul>
     <form action="">
@@ -27,19 +31,29 @@
     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore.js"></script>
     <script>
-      var compiled = _.template(
+      var articleListTemplate = _.template(
         "<ul><% _.each(articles, function(article) { %> \
           <li data-id=\"<%- article._id %>\"><%= article.title %></li> \
-        <% }); %></ul>");        
+        <% }); %></ul>");
+      var articleDataTemplate = _.template(
+        "<h2><%= article.title %></h2> \
+        <p><%- article.articleText %></p>"
+      );        
       var socket = io();
       socket.on('update article list', function(articles) {
         console.log(articles);
-        $("#articleListHolder").html(compiled({articles: articles.articles}));
+        $("#articleListHolder").html(articleListTemplate({articles: articles.articles}));
 
       });
       
       $("#articleListHolder").on("click", "li", function() {
-        console.log($(this).attr("data-id"));  
+        console.log("Clicked on: " + $(this).attr("data-id"));
+        socket.emit("get article", $(this).attr("data-id"));
+      });
+      
+      socket.on("send article data", function(article) {
+        console.log(article);
+        $("#articleDataHolder").html(articleDataTemplate({article: article}));        
       });  
       
       /*

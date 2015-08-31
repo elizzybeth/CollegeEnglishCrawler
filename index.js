@@ -2,6 +2,7 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var MongoClient = require('mongodb').MongoClient;
+var ObjectID = require('mongodb').ObjectID;
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/citationCategorizer.html');
@@ -14,11 +15,16 @@ function socketIO(collection) {
       socket.on('disconnect', function(){
         console.log('user disconnected');
       });
+      socket.on("get article", function(articleID){
+        collection.findOne({_id: new ObjectID(articleID)}, function(err, article){
+            io.emit("send article data", article);
+        });
+      });
       
-    collection.find({disabled: false},{URL: 1, title: 1, categorized: 1}).toArray(function(err, articles){
-        io.emit('update article list', {articles: articles});
-    });
-    
+      collection.find({disabled: false},{URL: 1, title: 1, categorized: 1}).toArray(function(err, articles){
+          io.emit('update article list', {articles: articles});
+      });
+      
     
     
 /*
