@@ -1,0 +1,92 @@
+/* CITATION CATEGORIZING
+
+use Express to put this stuff in
+	load the database
+	listen for connections
+		node becomes a webserver by listening for connections
+	if you connect to that port with a web browser, it'll send from your web browser to node.js
+
+separate HTML file that has a template
+	request stuff from mongo
+	use underscore
+		read file
+		pass to underscore: make template function
+		gives back a function that returns actual HTML
+	on the page, have to be able to change all the things to be what I want, click "save"
+	save will have to read input: post listener
+		have ID for an article
+		save new values for each variable: type and number of citations
+		inside listener, parse through things, do mongo updates
+
+==
+SPEC
+webapp that would bring up one record at a time, citation highlighted in context
+    guesses a classification if possible, displays guess
+    next [n], back [b], citation[c], not a citation [x]
+        if select [c], auto selects [1], if correct [n] 
+            press [2] to switch to citation string
+        confirm guess with [n] or type
+            [1] single citation
+                page /d+                
+                author [A-Za-z]+ 
+                    with page [A-Za-z]+/s/d+
+                brief title ".[^"]*"
+                    with page ".[^"]*"/s/d+
+                    with author ".[^"]*"/s[A-Za-z] (look up exclusion)
+                    with author/page ".[^"]*"/s[A-Za-z]/s/d+
+                    with author ".[^"]*"/s/w
+            [2] citation string
+                guesses how many there are
+                highlighted number, automatically overwrites if you start typing
+                when you hit next key, saves it
+            no automatic classification
+				    
+running count of records categorized, records left to categorize
+
+==
+POA
+citationCategorizer.html:
+    
+
+
+
+
+		    
+    keymap button for fwd, button for back
+    button for make a change
+        change 
+manually categorize all the stuff in parens
+most stuff it auto guesses, and I y/n whether it's correct
+    most things with just a number are page # citation
+    most things with word and number are author page # citation
+    most things with word number ; word number are author/page ; author/page
+        etc.
+        
+once in a while, I have to make an edit or put in more info, maybe
+
+
+
+==
+
+
+
+// Go through articleText looking for stuff in parens
+	// remember only to go through articles that aren't marked as disabled
+	
+// If find something in parens, save it as a possible citation
+    // Show it to me for possible categorizing with 1 sentence(?) before/after for context
+	// limiters? less than X words?
+	// if (\d+), type: pageNumber
+	    // confirm y/n
+	// if (\w\s\d+), type: authorPageNumber
+	    // confirm y/n
+	// if ([\w*\s*\d*] \; [\w*\s*\d*]), need to make something similar for 2 - 8? 9? chained citations
+		\(([.*] \; [.*])*\)
+// Output:
+	full sentence (for context)
+	article URL
+// Input:
+	citation? y/n
+	type: 
+		
+*/
