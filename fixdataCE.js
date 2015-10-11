@@ -43,67 +43,95 @@ var fixData = function(articles) {
             var metadata = "";
             var authors = null;
             console.log("================ NEW RECORD =====================");
-            $("p.noprint").each(function(index, p){
-                metadata += " " + $("p.noprint").text().trim();
-                // Set authors
-                if(authors === null){                                        
-                    //children("strong").first());
-                    
-                    var authorLineParts = $("p.noprint strong").html().split(": ");
-                                   
-                    article.authorString = authorLineParts.shift();
-                    article.authors = article.authorString.split("; ");
-                    article.title = authorLineParts.join(": ").trim();
-                    article.title = article.title.replace("<br>", "");
-                    article.pubDataParts = $("p.noprint a").text().trim();
-                    article.volumeIssue = $("p.noprint a").text().trim().match(/\(\d\d:\d\)/);
-                    article.pubDate = $("p.noprint a").text().trim().match(/\[\w*\s\d\d\d\d\]/);
+            metadata += " " + $("p.noprint").text().trim();
+            // Set authors
+            if(authors === null){                                        
+                //children("strong").first());
                 
-                // Making changes to full text
-                    // separate Works Cited, count elements
-                    if($(".References_content p").length){
-                        article.worksCited = $(".References_content p").text();
-                        article.numOfCitedWorks = $(".References_content p").length;
-                    } else if ($('p:contains("WORKS CITED")').length) {
-                        article.worksCited = $('p:contains("WORKS CITED")').nextAll().text();
-                        article.numOfCitedWorks = $('p:contains("WORKS CITED")').nextAll().length;
-                    } else if ($('p:contains("Works Cited")').length) {
-                        article.worksCited = $('p:contains("Works Cited")').nextAll().text();
-                        article.numOfCitedWorks = $('p:contains("Works Cited")').nextAll().length;
-                    } else if ($('p:contains("REFERENCES")').length) { 
-                        article.worksCited = $('p:contains("REFERENCES")').nextAll().text();
-                        article.numOfCitedWorks = $('p:contains("REFERENCES")').nextAll().length;
-                  
-                  // This has worked for many of the pages, but lots of the old References lists are saved stupidly and it may not be possible to automatically get them at all
-                    } else if ($('td:contains("[Reference]")').length) {
-                        article.worksCited = $('td:contains("[Reference]")').nextUntil('td:contains("[Author Affiliation]")').
-                            addBack().text();
-                        article.numOfCitedWorks = $('td:contains("[Reference]")').parent().nextUntil('td:contains("[Author Affiliation]")', 'td').length;
-                    }
-                    
-                    // save Abstract
-                    if($('[name = "abstract"]').length){
-                        article.abstract = 
-                            $('[name = "abstract"]').nextUntil('[name = "fulltext"]').addBack()
-                                .text().trim();
-                    } else {
-                        article.abstract = "";
-                    }
-                    
-                    var articleTextHTML = $('[name = "fulltext"]').nextUntil('[name = "references"]').
-                        addBack();
-                    article.numOfParagraphs = $(articleTextHTML).find("p").length;
-                    
-                    article.articleText = 
-                        $('[name = "fulltext"]').nextUntil('[name = "references"]').addBack()
-                            .text().trim();
+                var authorLineParts = $("p.noprint strong").html().split(": ");
+                               
+                article.authorString = authorLineParts.shift();
+                article.authors = article.authorString.split("; ");
+                article.title = authorLineParts.join(": ").trim();
+                article.title = article.title.replace("<br>", "");
+                article.pubDataParts = $("p.noprint a").text().trim();
+                article.volumeIssue = $("p.noprint a").text().trim().match(/\(\d\d:\d\)/);
+                article.pubDate = $("p.noprint a").text().trim().match(/\[\w*\s\d\d\d\d\]/);
             
+            // Making changes to full text
+                // separate Works Cited, count elements
+                if($(".References_content p").length){
+                    article.worksCited = $(".References_content p").text();
+                    article.numOfCitedWorks = $(".References_content p").length;
+                } else if ($('p:contains("WORKS CITED")').length) {
+                    article.worksCited = $('p:contains("WORKS CITED")').nextAll().text();
+                    article.numOfCitedWorks = $('p:contains("WORKS CITED")').nextAll().length;
+                } else if ($('p:contains("Works Cited")').length) {
+                    article.worksCited = $('p:contains("Works Cited")').nextAll().text();
+                    article.numOfCitedWorks = $('p:contains("Works Cited")').nextAll().length;
+                } else if ($('p:contains("REFERENCES")').length) { 
+                    article.worksCited = $('p:contains("REFERENCES")').nextAll().text();
+                    article.numOfCitedWorks = $('p:contains("REFERENCES")').nextAll().length;
+              
+              // This has worked for many of the pages, but lots of the old References lists are saved stupidly and it may not be possible to automatically get them at all
+                } else if ($('td:contains("[Reference]")').length) {
+                    article.worksCited = $('td:contains("[Reference]")').nextUntil('td:contains("[Author Affiliation]")').
+                        addBack().text();
+                    article.numOfCitedWorks = $('td:contains("[Reference]")').parent().nextUntil('td:contains("[Author Affiliation]")', 'td').length;
                 }
-            });
+                
+                // save Abstract
+                if($('[name = "abstract"]').length){
+                    article.abstract = 
+                        $('[name = "abstract"]').nextUntil('[name = "fulltext"]').addBack()
+                            .text().trim();
+                } else {
+                    article.abstract = "";
+                }
+                
+                var articleTextHTML = $('[name = "fulltext"]').nextUntil('[name = "references"]').
+                    addBack();
+                article.numOfParagraphs = $(articleTextHTML).find("p").length;
+                
+                if($('[name = "fulltext"]').length) {
+                    article.articleText = 
+                    $('[name = "fulltext"]').nextUntil('[name = "references"]', ':not(script)').addBack()
+                        .text().trim();
+                    console.log("Tried to fill via fulltext.");
+                } else if($(".Headnote_content").legnth) {
+                    article.articleText =
+                    $(".Headnote_content").parent().parent().nextUntil().text().trim();
+                    console.log("Tried to fill via Headnote_content.");
+                } else if($(".inline.noprint.smallFont").length) {
+                    article.articleText = 
+                    $(".inline.noprint.smallFont").parent().nextUntil('div:contains("References")').text().trim();
+                    console.log("Tried to fill via .inline.noprint");
+                    if(article.articleText == "") {
+                        console.log(article.articleText);
+                        process.kill;
+                    }
+                } else {
+                    console.log("Article text couldn't be filled.");
+                    console.log("Article title: " + article.title);
+                    process.kill();
+                }
+                
+                if(article.articleText == "") {
+                    console.log("Article Text is empty.");
+                    console.log(article.title);
+                    if(($(".inline.noprint.smallFont").parent().nextUntil('div:contains("References")').text().trim()) == "") {
+                        console.log("Flagged this empty article for removal. " + article.URL);
+                        shouldRemove = true;
+                    }
+                }
+                
+            }
             
-            shouldRemove = badPhrases.some(function(phrase) {
-                return phrase.test(metadata); 
-            });
+            if(shouldRemove == false) {
+                shouldRemove = badPhrases.some(function(phrase) {
+                    return phrase.test(metadata); 
+                });
+            }
             
             article.disabled = false;
             article.poem = false;
@@ -127,10 +155,12 @@ var fixData = function(articles) {
                     console.log(count);
                     if (count > 0) {
                         shouldRemove = true;
+                        console.log("Found a duplicate! " + article.URL);
                     }
                     if ($('td.textSmall:contains("Document types:")').next('td.textSmall:contains("Poetry")').length) {
                         shouldRemove = true;
                         article.poem = true;
+                        console.log("Found a poem! " + article.URL);
                     }
                     if(shouldRemove) {
                         article.disabled = true; // Remember to only look at articles that aren't disabled

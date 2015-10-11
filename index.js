@@ -24,15 +24,6 @@ function socketIO(collection) {
       collection.find({disabled: false},{URL: 1, title: 1, categorized: 1}).toArray(function(err, articles){
           io.emit('update article list', {articles: articles});
       });
-      
-    
-    
-/*
-      socket.on('chat message', function(msg){
-        io.emit('chat message', msg);
-        console.log('message: ' + msg);
-      });
-*/
     });
     
     http.listen(3000, function(){
