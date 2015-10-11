@@ -21,8 +21,13 @@ function socketIO(collection) {
         });
       });
       
-      collection.find({disabled: false},{URL: 1, title: 1, categorized: 1}).toArray(function(err, articles){
-          io.emit('update article list', {articles: articles});
+      collection.findOne({citationsTagged: null},{"sort": "title"}, function(err, article){
+            io.emit("send article data", article);
+      });
+      
+      collection.find({disabled: false},{URL: 1, title: 1, categorized: 1}).sort({title: 1}).toArray(function(err, articles){
+        console.log(err);
+        io.emit('update article list', {articles: articles});
       });
     });
     
@@ -44,6 +49,11 @@ MongoClient.connect("mongodb://localhost:27017/collegeenglish", function(err, db
             console.dir(err);
             process.kill();
         }
-        socketIO(collection);           
+        collection.ensureIndex("title", function(err){
+            if(err) {
+                console.log(err);
+            }
+            socketIO(collection);           
+        });
     });
 }); 

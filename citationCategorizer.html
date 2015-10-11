@@ -33,7 +33,7 @@
     <div id="buttonRow">
         <button type="button">back (b)</button>
         <button type="button">next (n)</button>
-        <button type="button">citation (c)</button>
+        <button type="button">change (c)</button>
         <button type="button">text (t)</button>
     </div>
 <!--
@@ -49,7 +49,8 @@
       var articleListTemplate = _.template(
         "<ul><% _.each(articles, function(article) { %> \
           <li data-id=\"<%- article._id %>\"><%= article.title %></li> \
-        <% }); %></ul>");
+        <% }); %></ul>"
+      );
       var articleDataTemplate = _.template(
         "<h2><%= article.title %></h2> \
         <p><a href=\"<%= article.URL %>\" target=\"_blank\"><%= article.URL %></a></p> \
@@ -69,6 +70,7 @@
       });
       
       socket.on("send article data", function(article) {
+        console.log("Just got an article.");
         console.log(article);
         $("#articleDataHolder").html(articleDataTemplate({article: article}));        
       });  

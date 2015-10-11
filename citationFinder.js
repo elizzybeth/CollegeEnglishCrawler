@@ -9,8 +9,8 @@ var fixData = function(articles) {
     // Query the database and get the article data in a variable
     var fixArticle = function(articles) {
         // Find all articles that haven't been marked as trimmed
-        // articles.findOne({trimmed:{$exists: false}}, function(err, article) {
-        articles.findOne({authors: "Kopelson, Karen"}, function(err, article) {            
+        articles.findOne({trimmed:{$exists: false}}, function(err, article) {
+        // articles.findOne({authors: "Kopelson, Karen"}, function(err, article) {            
             if(article === null){
                 console.log("All done!");
                 return;
@@ -83,9 +83,8 @@ var fixData = function(articles) {
                 }
             } while (citationStart != -1);
             console.log(citations);
-            
+            article.citations = citations;
                         
-/*            
             articles.update({_id: article._id}, article, {w: 1, upsert: true}, function(err, article) {
                 if(err){
                     console.log("Couldn't trim: ", article.URL);
@@ -93,9 +92,7 @@ var fixData = function(articles) {
                     process.kill();
                 }
                 fixArticle(articles);
-            }); 
-*/
-
+            });
         });
     };
     
