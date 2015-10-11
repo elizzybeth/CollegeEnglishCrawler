@@ -22,7 +22,7 @@ function socketIO(collection) {
       });
       
       collection.findOne({citationsTagged: null},{"sort": "title"}, function(err, article){
-            io.emit("send article data", article);
+        io.emit("send article data", article);
       });
       
       collection.find({disabled: false},{URL: 1, title: 1, categorized: 1}).sort({title: 1}).toArray(function(err, articles){

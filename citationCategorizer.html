@@ -11,8 +11,10 @@
     <title>Citation Categorizer</title>
     <style>
       #articleListHolder { width: 15%; position: absolute; top: 0; bottom: 0; overflow: auto; }
-      #articleDataHolder { width: 80%; height: 50%; position: absolute; top: 0; bottom: 0; right: 0; overflow: auto; }
-      #buttonRow { width: 80%; height: 20%; position: absolute; right: 0; bottom: 0; overflow: auto; }
+      #articleDataHolder { width: 80%; height: 50%; position: absolute; top: 0; right: 0; overflow: auto; }
+      #citationDataHolder { width: 80%; height: 30%; position: absolute; top: 50%; right: 0;}
+      #buttonRow { width: 80%; height: 20%; position: absolute; top: 80%; right: 0; bottom: 0; overflow: auto; }
+      .highlight { background: yellow; font-weight: bold;}
 /*      * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font: 13px Helvetica, Arial; }
       form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
@@ -29,7 +31,8 @@
     </div>
     <div id="articleDataHolder">
     </div>
-
+    <div id="citationDataHolder">
+    </div>
     <div id="buttonRow">
         <button type="button">back (b)</button>
         <button type="button">next (n)</button>
@@ -54,9 +57,40 @@
       var articleDataTemplate = _.template(
         "<h2><%= article.title %></h2> \
         <p><a href=\"<%= article.URL %>\" target=\"_blank\"><%= article.URL %></a></p> \
-        <p><%- article.articleText %></p> \
+        <p id=\"articleText\"><%- article.articleText %></p> \
         "
-      );        
+      );
+/*      var citationDataHolder = _.template(
+        "<h2><%= %> \
+        "
+      );       */ 
+        
+      function getCitation (article) {
+        citation = article.citations[0];
+        return citation;
+      }
+      
+      function highlight (article, citation) {
+        // get articleText
+        // locate citation at index of articleText
+        var begin = article.articleText.substr(0,citation.start);
+        var end = article.articleText.substr(citation.start + citation.text.length);
+        var newText = begin + "<em class='highlight'>" + citation.text + "</em>" + end;
+        $("#articleText").html(newText);
+        console.log(citation);
+        console.log(newText);
+        // wrap citation in <em class="highlight"> tags
+        // re-save articleText 
+        var container = $('#articleDataHolder'),
+            scrollTo = $('.highlight');
+        
+        container.scrollTop(
+            scrollTo.offset().top - container.offset().top + container.scrollTop() - 100
+        );
+      }
+      
+      
+      
       var socket = io();
       socket.on('update article list', function(articles) {
         console.log(articles);
@@ -71,8 +105,8 @@
       
       socket.on("send article data", function(article) {
         console.log("Just got an article.");
-        console.log(article);
-        $("#articleDataHolder").html(articleDataTemplate({article: article}));        
+        $("#articleDataHolder").html(articleDataTemplate({article: article}));
+        highlight(article, getCitation(article));        
       });  
       
       /*

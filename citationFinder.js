@@ -45,9 +45,7 @@ var fixData = function(articles) {
                     ++citationStart; // so as to not include the parenthesis
                     remainingText = remainingText.substr(citationStart);
                     citationEnd = remainingText.search(/\)/); 
-                    capturedText = remainingText.substr(0,citationEnd);
-                    remainingText = remainingText.substr(citationEnd);
-                    positionOffset = positionOffset + citationStart + citationEnd;  
+                    capturedText = remainingText.substr(0,citationEnd);  
                     if (capturedText.match(singleCitationPage)){
                         citationType = "singleCitationPage";
                         citationCount = 1;
@@ -80,6 +78,8 @@ var fixData = function(articles) {
                     console.log("Pushing: ");
                     console.log("text: " + capturedText);
                     citations.push({text: capturedText, start: citationStart + positionOffset, type: citationType, citationCount: citationCount});                  
+                    remainingText = remainingText.substr(citationEnd);
+                    positionOffset = positionOffset + citationStart + citationEnd;
                 }
             } while (citationStart != -1);
             console.log(citations);
