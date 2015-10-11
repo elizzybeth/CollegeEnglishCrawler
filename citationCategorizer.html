@@ -60,13 +60,18 @@
         <p id=\"articleText\"><%- article.articleText %></p> \
         "
       );
-/*      var citationDataHolder = _.template(
-        "<h2><%= %> \
+      var citationDataTemplate = _.template(
+        "<h2>Automatic categorization: <%= citation.type %></h2> \
+        <h2>How many citations? <%= citation.citationCount %></h2> \
         "
-      );       */ 
+      ); 
         
+      var currentArticle;
+      var citationIndex = 0; // CHANGE THIS once I've given a "categorized" tag
+      var currentCitation;  
+      
       function getCitation (article) {
-        citation = article.citations[0];
+        citation = article.citations[citationIndex];
         return citation;
       }
       
@@ -89,13 +94,10 @@
         );
       }
       
-      
-      
       var socket = io();
       socket.on('update article list', function(articles) {
         console.log(articles);
         $("#articleListHolder").html(articleListTemplate({articles: articles.articles}));
-
       });
       
       $("#articleListHolder").on("click", "li", function() {
@@ -105,9 +107,15 @@
       
       socket.on("send article data", function(article) {
         console.log("Just got an article.");
+        currentArticle = article;
+        currentCitation = currentArticle.citations[citationIndex];
+        console.log("Current Citation is: ", currentCitation);
         $("#articleDataHolder").html(articleDataTemplate({article: article}));
-        highlight(article, getCitation(article));        
-      });  
+        highlight(article, getCitation(article));
+        $("#citationDataHolder").html(citationDataTemplate({citation: currentCitation}));        
+      }); 
+    
+       
       
       /*
       $('form').submit(function(){
