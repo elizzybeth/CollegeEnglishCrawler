@@ -21,7 +21,7 @@ function socketIO(collection) {
         });
       });
       
-      collection.findOne({citationsTagged: null},{"sort": "title"}, function(err, article){
+      collection.findOne({citationsTagged: null, disabled: false},{"sort": "title"}, function(err, article){
         io.emit("send article data", article);
       });
       
