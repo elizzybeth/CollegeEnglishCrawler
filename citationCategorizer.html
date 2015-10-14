@@ -121,12 +121,14 @@ Make the "next" button add a "categorized" flag & go to the next citation index
         $("#citationDataHolder").html(citationDataTemplate({citation: currentArticle.citations[citationIndex]}));
       });
       
+      var startOnLastLink = false; 
+    
       $("#back").on("click", function() {
         --citationIndex;
         if(citationIndex < 0) {
             var prevArticle = $('li[data-id="' + currentArticle._id + '"]').prev().attr("data-id");
-            currentArticle = socket.emit("get article", prevArticle);
-            citationIndex = 0;
+            startOnLastLink = true;
+            socket.emit("get article", prevArticle);
         }
         highlight(currentArticle, citationIndex);
       });
@@ -135,10 +137,16 @@ Make the "next" button add a "categorized" flag & go to the next citation index
         currentArticle = article;
         $("li").removeClass("highlight");
         $('li[data-id="' + article._id + '"]').addClass("highlight");
+        if(startOnLastLink) {
+            citationIndex = article.citations.length - 1;
+            startOnLastLink = false;
+        } else {
+            citationIndex = 0;
+        }   
         currentCitation = currentArticle.citations[citationIndex];
         $("#articleDataHolder").html(articleDataTemplate({article: article}));
         highlight(article, getCitation(article));
-        $("#citationDataHolder").html(citationDataTemplate({citation: currentCitation}));        
+        $("#citationDataHolder").html(citationDataTemplate({citation: currentCitation}));     
       }); 
     
        
