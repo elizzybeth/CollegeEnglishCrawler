@@ -15,10 +15,16 @@ function socketIO(collection) {
       socket.on('disconnect', function(){
         console.log('user disconnected');
       });
+      
       socket.on("get article", function(articleID){
         collection.findOne({_id: new ObjectID(articleID)}, function(err, article){
             io.emit("send article data", article);
         });
+      });
+      
+      socket.on("new count", function(currentArticle) {
+        console.log("Got an update!");
+        console.log("New count: ", currentArticle);
       });
       
       collection.findOne({citationsTagged: null, disabled: false},{"sort": "title"}, function(err, article){

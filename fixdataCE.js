@@ -42,7 +42,6 @@ var fixData = function(articles) {
             
             var metadata = "";
             var authors = null;
-            console.log("================ NEW RECORD =====================");
             metadata += " " + $("p.noprint").text().trim();
             // Set authors
             if(authors === null){                                        
@@ -63,21 +62,27 @@ var fixData = function(articles) {
                 if($(".References_content p").length){
                     article.worksCited = $(".References_content p").text();
                     article.numOfCitedWorks = $(".References_content p").length;
+                    article.worksCitedFill = "Referencescontentp";
                 } else if ($('p:contains("WORKS CITED")').length) {
                     article.worksCited = $('p:contains("WORKS CITED")').nextAll().text();
                     article.numOfCitedWorks = $('p:contains("WORKS CITED")').nextAll().length;
+                    article.worksCitedFill = "pcontainsWORKSCITED";
                 } else if ($('p:contains("Works Cited")').length) {
                     article.worksCited = $('p:contains("Works Cited")').nextAll().text();
                     article.numOfCitedWorks = $('p:contains("Works Cited")').nextAll().length;
+                    article.worksCitedFill = "pcontainsWorksCited";
                 } else if ($('p:contains("REFERENCES")').length) { 
                     article.worksCited = $('p:contains("REFERENCES")').nextAll().text();
                     article.numOfCitedWorks = $('p:contains("REFERENCES")').nextAll().length;
-              
-              // This has worked for many of the pages, but lots of the old References lists are saved stupidly and it may not be possible to automatically get them at all
+                    article.worksCitedFill = "pcontainsREFERENCES";
                 } else if ($('td:contains("[Reference]")').length) {
                     article.worksCited = $('td:contains("[Reference]")').nextUntil('td:contains("[Author Affiliation]")').
                         addBack().text();
                     article.numOfCitedWorks = $('td:contains("[Reference]")').parent().nextUntil('td:contains("[Author Affiliation]")', 'td').length;
+                    article.worksCitedFill = "tdcontainsReference";
+                } else {
+                    article.worksCited = "";
+                    article.worksCitedFill = "none";
                 }
                 
                 // save Abstract
@@ -89,33 +94,33 @@ var fixData = function(articles) {
                     article.abstract = "";
                 }
                 
-                var articleTextHTML = $('[name = "fulltext"]').nextUntil('[name = "references"]').
-                    addBack();
-                article.numOfParagraphs = $(articleTextHTML).find("p").length;
+                var articleTextHTML;
                 
                 if($('[name = "fulltext"]').length) {
                     article.articleText = 
                     $('[name = "fulltext"]').nextUntil('[name = "references"]', ':not(script)').addBack()
                         .text().trim();
-                    console.log("Tried to fill via fulltext.");
-                } else if($(".Headnote_content").legnth) {
+                    articleTextHTML = $('[name = "fulltext"]').nextUntil('[name = "references"]', ':not(script)').addBack();
+                    article.articleText = articleTextHTML.text().trim();
+                    article.numOfParagraphs = articleTextHTML.find("p").length;
+                } else if($(".Headnote_content").length) {
                     article.articleText =
                     $(".Headnote_content").parent().parent().nextUntil().text().trim();
-                    console.log("Tried to fill via Headnote_content.");
                 } else if($(".inline.noprint.smallFont").length) {
                     article.articleText = 
                     $(".inline.noprint.smallFont").parent().nextUntil('div:contains("References")').text().trim();
-                    console.log("Tried to fill via .inline.noprint");
-                    if(article.articleText == "") {
-                        console.log(article.articleText);
-                        process.kill;
-                    }
                 } else {
                     console.log("Article text couldn't be filled.");
                     console.log("Article title: " + article.title);
                     process.kill();
                 }
                 
+                // Get index of end of "Full Text" + first () + "Copyright National Council of Teachers of English Conference on College Composition and Communication"
+                // Set articleText to begin at new index
+                
+                var stripRegEx = /^Full Text\s\([^)]+\)Copyright National Council of Teachers of English Conference on College Composition and Communication [A-Za-z]{3} \d{4}/;
+                article.articleText = article.articleText.replace(stripRegEx, "");
+                                
                 if(article.articleText == "") {
                     console.log("Article Text is empty.");
                     console.log(article.title);
@@ -136,9 +141,6 @@ var fixData = function(articles) {
             article.disabled = false;
             article.poem = false;
             
-            console.log(article._id);
-            console.log(typeof article._id);
-            
             articles.count(
                 {
                 URL: article.URL,
@@ -151,8 +153,6 @@ var fixData = function(articles) {
                         console.dir(err);
                         process.kill();
                     }
-                    console.log(article.URL);
-                    console.log(count);
                     if (count > 0) {
                         shouldRemove = true;
                         console.log("Found a duplicate! " + article.URL);

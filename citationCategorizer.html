@@ -16,8 +16,9 @@ Make the "next" button add a "categorized" flag & go to the next citation index
       #articleListHolder { width: 15%; position: absolute; top: 0; bottom: 0; overflow: auto; }
       #articleDataHolder { width: 80%; height: 50%; position: absolute; top: 0; right: 0; overflow: auto; }
       #citationDataHolder { width: 80%; height: 30%; position: absolute; top: 50%; right: 0;}
-      #buttonRow { width: 80%; height: 20%; position: absolute; top: 80%; right: 0; bottom: 0; overflow: auto; }
+      #buttonRow { width: 80%; height: 20%; position: absolute; top: 80%; right: 0; bottom: 0; overflow: auto; padding-top: 20px;}
       .highlight { background: yellow; font-weight: bold;}
+      #changeCitationCount { margin: 10px 0; }
 /*      * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font: 13px Helvetica, Arial; }
       form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
@@ -37,10 +38,14 @@ Make the "next" button add a "categorized" flag & go to the next citation index
     <div id="citationDataHolder">
     </div>
     <div id="buttonRow">
-        <button type="button" id="back">back (b)</button>
-        <button type="button" id="next">next (n)</button>
-        <button type="button">change (c)</button>
-        <button type="button">text (t)</button>
+        <form id="countFixForm">
+            <input type="text" name="citationCount" id="changeCitationCount">
+            <input type="submit" value="FIX" id="fix">
+        </form>
+        <button type="button" id="back">BACK (b)</button>
+        <button type="button" id="next">NEXT (n)</button>
+        <button type="button">CONFIRM (c)</button>
+        <button type="button">DENY (d)</button>
     </div>
 <!--
     <ul id="messages"></ul>
@@ -133,6 +138,21 @@ Make the "next" button add a "categorized" flag & go to the next citation index
         highlight(currentArticle, citationIndex);
       });
       
+      $("#countFixForm").on("submit", function(ev) {
+        ev.preventDefault();
+        var newCount = parseInt($("#changeCitationCount").val(),10);
+        if(typeof newCount === "NaN"){
+            alert("You must enter a number!");
+            return;
+        }
+        
+        // update local copy of article object
+        currentArticle.citations[citationIndex].citationCount = newCount; 
+        console.log(currentArticle);
+        currentArticle.citations[citationIndex].confirmed = true;
+        socket.emit("new count", currentArticle); 
+      });
+      
       socket.on("send article data", function(article) {
         currentArticle = article;
         $("li").removeClass("highlight");
@@ -149,18 +169,6 @@ Make the "next" button add a "categorized" flag & go to the next citation index
         $("#citationDataHolder").html(citationDataTemplate({citation: currentCitation}));     
       }); 
     
-       
-      
-      /*
-      $('form').submit(function(){
-        socket.emit('chat message', $('#m').val());
-        $('#m').val('');
-        return false;
-      });
-      socket.on('chat message', function(msg){
-        $('#messages').append($('<li>').text(msg));
-      });
-      */
     </script>
   </body>
 </html>
