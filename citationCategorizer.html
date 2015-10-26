@@ -39,8 +39,8 @@ Make the "next" button add a "categorized" flag & go to the next citation index
     </div>
     <div id="buttonRow">
         <form id="countFixForm">
-            <input type="text" name="citationCount" id="changeCitationCount">
-            <input type="submit" value="FIX" id="fix">
+            <input type="text" name="citationCount" id="changeCitationCount" autocomplete="off">
+            <input type="submit" value="CONFIRM" id="fix">
         </form>
         <button type="button" id="back">BACK (b)</button>
         <button type="button" id="next">NEXT (n)</button>
@@ -100,6 +100,8 @@ Make the "next" button add a "categorized" flag & go to the next citation index
         container.scrollTop(
             scrollTo.offset().top - container.offset().top + container.scrollTop() - 100
         );
+        $("#changeCitationCount").val(currentArticle.citations[citationIndex].citationCount).select();
+        $("#citationDataHolder").html(citationDataTemplate({citation: currentArticle.citations[citationIndex]}));
       }
       
       var socket = io();
@@ -115,34 +117,40 @@ Make the "next" button add a "categorized" flag & go to the next citation index
         socket.emit("get article", $(this).attr("data-id"));
       });
       
-      $("#next").on("click", function() {
-        ++citationIndex;
-        if(citationIndex >= currentArticle.citations.length){
+      function goToNextCitation() {
+        if(citationIndex >= currentArticle.citations.length - 1){
             var nextArticle = $('li[data-id="' + currentArticle._id + '"]').next().attr("data-id");
             currentArticle = socket.emit("get article", nextArticle);
             citationIndex = 0;
+        } else {
+            ++citationIndex;
+            highlight(currentArticle, citationIndex);
         }
-        highlight(currentArticle, citationIndex);
-        $("#citationDataHolder").html(citationDataTemplate({citation: currentArticle.citations[citationIndex]}));
-      });
+      };
       
-      var startOnLastLink = false; 
-    
-      $("#back").on("click", function() {
-        --citationIndex;
-        if(citationIndex < 0) {
+      function goToPrevCitation() {
+        if(citationIndex <= 0) {
             var prevArticle = $('li[data-id="' + currentArticle._id + '"]').prev().attr("data-id");
             startOnLastLink = true;
             socket.emit("get article", prevArticle);
+        } else {
+            --citationIndex;
+            highlight(currentArticle, citationIndex);
         }
-        highlight(currentArticle, citationIndex);
-      });
+      };
+      
+      $("#next").on("click", goToNextCitation);
+      
+      var startOnLastLink = false; 
+    
+      $("#back").on("click", goToPrevCitation);
       
       $("#countFixForm").on("submit", function(ev) {
         ev.preventDefault();
         var newCount = parseInt($("#changeCitationCount").val(),10);
-        if(typeof newCount === "NaN"){
+        if(isNaN(newCount)){
             alert("You must enter a number!");
+            $("#changeCitationCount").focus();
             return;
         }
         
@@ -150,10 +158,27 @@ Make the "next" button add a "categorized" flag & go to the next citation index
         currentArticle.citations[citationIndex].citationCount = newCount; 
         console.log(currentArticle);
         currentArticle.citations[citationIndex].confirmed = true;
-        socket.emit("new count", currentArticle); 
+        socket.emit("new count", currentArticle);
+        goToNextCitation(); 
+      });
+      
+      $("#changeCitationCount").keypress(function(ev) {
+        if((ev.which < 48 || ev.which > 57) && ev.which != 13) { 
+            ev.preventDefault();
+            if(ev.which == 110) {
+                goToNextCitation();
+            }
+            if(ev.which == 98) {
+                goToPrevCitation();   
+            }
+        }
       });
       
       socket.on("send article data", function(article) {
+        if(article === null) {
+            alert("Article is null.");
+            return;
+        }
         currentArticle = article;
         $("li").removeClass("highlight");
         $('li[data-id="' + article._id + '"]').addClass("highlight");
