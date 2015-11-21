@@ -1,0 +1,64 @@
+db.articles.aggregate (
+    [
+        {   $match: {   "disabled" : false } },
+        {   $unwind: "$citations"   },
+        {   
+            $group: {
+                _id: null,
+                totalParentheticals: { $sum: 1 },
+                totalCites: {   $sum: "$citations.citationCount"  }
+            }
+        }
+    ]
+);
+
+results: { "_id" : null, "totalParentheticals" : 41670, "totalCites" : 28067 }
+mean cites per article: 48.6429809358752
+
+db.articles.aggregate (
+    [
+        {   $match: {   "disabled" : false } },
+        {   
+            $group: {
+                _id: null,
+                totalWordCount: { $sum: "$wordCount" },
+                totalParagraphCount: { $sum: "$numOfParagraphs"}
+            }
+        }
+    ]
+);
+results: { "_id" : null, "totalWordCount" : 4042610, "totalParagraphCount" : 35010 }
+mean words per citation: 144.034275127374
+mean citations per paragraph: 0.8 = much lower than I expected
+
+ 
+
+
+
+Get the citation counts, word counts, paragraph counts into an array
+
+db.articles.find({"disabled": false, }
+
+
+
+Calculate mean cites / word, mean cites / paragraph
+Calculate median cites / word, median cites / paragraph
+    count = db.articles.count();
+    db.articles.find().sort( {"a":1} ).skip(count / 2 - 1).limit(1);
+
+Determine what the numbers are for
+    EMERGING VOICES
+        db.articles.find({$text: {$search: "EMERGING VOICES"}});
+    "senior scholars"
+        
+Calculate instance of embedded citations 
+    $regex
+    https://docs.mongodb.org/manual/reference/operator/query/regex/
+    { <field>: { $regex: /pattern/, $options: '<options>' } }
+Figure out instance of cite strings
+    How often are there citations of more than one text at a time?
+    How often 
+Figure out instance of self-citations?
+
+
+collection.find({},{_id: 0, linkCount:1, "FBdata.total_count":1}).toArray(function(err, results){       

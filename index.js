@@ -22,18 +22,26 @@ function socketIO(collection) {
         });
       });
       
-      socket.on("new count", function(currentArticle) {
+      socket.on("save article", function(currentArticle) {
         console.log("Got an update!");
-        console.log("New count: ", currentArticle);
-      });
-      
-      collection.findOne({citationsTagged: null, disabled: false},{"sort": "title"}, function(err, article){
-        io.emit("send article data", article);
+        console.log("Confirmed article: ", currentArticle);
+        var oldID = currentArticle._id;
+        delete currentArticle._id;
+        collection.update({_id: new ObjectID(oldID)}, currentArticle, {w: 1}, function(err) {
+            if(err) {
+                console.log("Couldn't save article.");
+                console.log(err);
+                return;
+            }
+        });
       });
       
       collection.find({disabled: false},{URL: 1, title: 1, categorized: 1}).sort({title: 1}).toArray(function(err, articles){
         console.log(err);
         io.emit('update article list', {articles: articles});
+        collection.findOne({citationsTagged: null, disabled: false},{"sort": "title"}, function(err, article){
+          io.emit("send article data", article);
+        });
       });
     });
     
@@ -43,7 +51,7 @@ function socketIO(collection) {
 };
 
 
-MongoClient.connect("mongodb://localhost:27017/collegeenglish", function(err, db) {
+MongoClient.connect("mongodb://localhost:27017/ccc", function(err, db) {
     if(err) {
         console.log("Couldn't connect.");
         console.dir(err);

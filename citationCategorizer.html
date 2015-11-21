@@ -13,16 +13,20 @@ Make the "next" button add a "categorized" flag & go to the next citation index
   <head>
     <title>Citation Categorizer</title>
     <style>
+      * { font-family: Arial, sans-serif; line-height: 1.25em; background-color: #2C2C2C; color: #FEC638;}
       #articleListHolder { width: 15%; position: absolute; top: 0; bottom: 0; overflow: auto; }
-      #articleDataHolder { width: 80%; height: 50%; position: absolute; top: 0; right: 0; overflow: auto; }
-      #citationDataHolder { width: 80%; height: 30%; position: absolute; top: 50%; right: 0;}
-      #buttonRow { width: 80%; height: 20%; position: absolute; top: 80%; right: 0; bottom: 0; overflow: auto; padding-top: 20px;}
-      .highlight { background: yellow; font-weight: bold;}
+      #articleDataHolder { width: 80%; height: 50%; position: absolute; top: 0; right: 0; overflow: auto; font-size: 25px; }
+      #citationDataHolder { width: 80%; height: 30%; position: absolute; top: 65%; bottom: 0; right: 0;}
+      #buttonRow { width: 80%; height: 20%; position: absolute; top: 50%; right: 0; overflow: auto; padding-top: 20px;}
+      .highlight { background: #494949; font-weight: bold;}
       #changeCitationCount { margin: 10px 0; }
+      form input { height: 50px; width: 200px; font-size: 40px;}
+      
+      
 /*      * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font: 13px Helvetica, Arial; }
       form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
-      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; height: 50px; font-size: 45px;}
       form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
       #messages { list-style-type: none; margin: 0; padding: 0; }
       #messages li { padding: 5px 10px; }
@@ -33,8 +37,6 @@ Make the "next" button add a "categorized" flag & go to the next citation index
   <body>
     <div id="articleListHolder">
     </div>
-    <div id="articleDataHolder">
-    </div>
     <div id="citationDataHolder">
     </div>
     <div id="buttonRow">
@@ -44,9 +46,10 @@ Make the "next" button add a "categorized" flag & go to the next citation index
         </form>
         <button type="button" id="back">BACK (b)</button>
         <button type="button" id="next">NEXT (n)</button>
-        <button type="button">CONFIRM (c)</button>
-        <button type="button">DENY (d)</button>
     </div>
+    <div id="articleDataHolder">
+    </div>
+
 <!--
     <ul id="messages"></ul>
     <form action="">
@@ -70,12 +73,15 @@ Make the "next" button add a "categorized" flag & go to the next citation index
       );
       var citationDataTemplate = _.template(
         "<h2>Current citation: (<%= citation.text %>)</h2> \
-        <h2>Automatic categorization: <%= citation.type %></h2> \
-        <h2>How many citations? <%= citation.citationCount %></h2> \
+        <p>Citation <%= citationNumber %> / <%= article.citations.length %> Article <%= articleNumber %> / <%= articleCount %> <br> \
+        Automatic categorization: <%= citation.type %> <br> \
+        How many citations? <%= citation.citationCount %> <br> \
+        Confirmed? <%= citation.confirmed?\"yes\":\"no\" %></p>\
         "
       ); 
         
       var currentArticle = null;
+      var articleNumber = 1;
       var citationIndex = 0; // CHANGE THIS once I've given a "categorized" tag
       var currentCitation;
       
@@ -101,7 +107,12 @@ Make the "next" button add a "categorized" flag & go to the next citation index
             scrollTo.offset().top - container.offset().top + container.scrollTop() - 100
         );
         $("#changeCitationCount").val(currentArticle.citations[citationIndex].citationCount).select();
-        $("#citationDataHolder").html(citationDataTemplate({citation: currentArticle.citations[citationIndex]}));
+        $("#citationDataHolder").html(citationDataTemplate({citation: currentArticle.citations[citationIndex],
+            article: currentArticle, 
+            articleCount: $('li').length,
+            articleNumber: articleNumber,
+            citationNumber: citationIndex + 1
+        }));
       }
       
       var socket = io();
@@ -109,7 +120,8 @@ Make the "next" button add a "categorized" flag & go to the next citation index
         $("#articleListHolder").html(articleListTemplate({articles: articles.articles}));
         if(currentArticle !== null) {
             $("li").removeClass("highlight");
-            $('li[data-id="' + currentArticle._id + '"]').addClass("highlight");
+            articleNumber = $('li[data-id="' + currentArticle._id + '"]').addClass("highlight").prevAll("li").length + 1;
+            console.log(articleNumber);
         }
       });
       
@@ -141,7 +153,8 @@ Make the "next" button add a "categorized" flag & go to the next citation index
       
       $("#next").on("click", goToNextCitation);
       
-      var startOnLastLink = false; 
+      var startOnLastLink = false;
+      var startOnFirstUnconfirmed = true; 
     
       $("#back").on("click", goToPrevCitation);
       
@@ -158,7 +171,7 @@ Make the "next" button add a "categorized" flag & go to the next citation index
         currentArticle.citations[citationIndex].citationCount = newCount; 
         console.log(currentArticle);
         currentArticle.citations[citationIndex].confirmed = true;
-        socket.emit("new count", currentArticle);
+        socket.emit("save article", currentArticle);
         goToNextCitation(); 
       });
       
@@ -181,8 +194,13 @@ Make the "next" button add a "categorized" flag & go to the next citation index
         }
         currentArticle = article;
         $("li").removeClass("highlight");
-        $('li[data-id="' + article._id + '"]').addClass("highlight");
-        if(startOnLastLink) {
+        articleNumber = $('li[data-id="' + currentArticle._id + '"]').addClass("highlight").prevAll("li").length + 1;
+        if(startOnFirstUnconfirmed) {
+            citationIndex = 0;
+            while((typeof currentArticle.citations[citationIndex].confirmed != "undefined") && (citationIndex < currentArticle.citations.length -1)) {
+                ++citationIndex;
+            }
+        } else if(startOnLastLink) {
             citationIndex = article.citations.length - 1;
             startOnLastLink = false;
         } else {
@@ -190,8 +208,7 @@ Make the "next" button add a "categorized" flag & go to the next citation index
         }   
         currentCitation = currentArticle.citations[citationIndex];
         $("#articleDataHolder").html(articleDataTemplate({article: article}));
-        highlight(article, getCitation(article));
-        $("#citationDataHolder").html(citationDataTemplate({citation: currentCitation}));     
+        highlight(article, getCitation(article));    
       }); 
     
     </script>

@@ -45,7 +45,26 @@ running count of records categorized, records left to categorize
 
 ==
 POA
+index.js
+    findOne article
+    iterate over articleText looking for /\([^)]\)/
+        save parenthetical as variable
+        send variable to citationCategorizer.html
+        get response from citationCategorizer.html
+        store parenthetical/response as key/value pair: 
+            string (whatev in citation)
+            type of citation    
+
 citationCategorizer.html:
+    display article list on left
+    display one sentence before and after parenthetical
+    [n] [b] [c] [x]
+
+get list of article titles
+display list of article titles in html
+when click on title, displays article text on right
+
+write underscore.js template that prints title
     
 
 
